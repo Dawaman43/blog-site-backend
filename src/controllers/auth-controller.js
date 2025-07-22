@@ -91,6 +91,7 @@ export const login = async (req, res, next) => {
       id: existingEmail._id,
       username: existingEmail.username,
       email: existingEmail.email,
+      role: existingEmail.role,
     };
     console.log(payload);
 
@@ -107,6 +108,7 @@ export const login = async (req, res, next) => {
         id: existingEmail._id,
         username: existingEmail.username,
         email: existingEmail.email,
+        role: existingEmail.role,
       },
     });
   } catch (error) {
