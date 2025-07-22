@@ -10,6 +10,7 @@ const blogSchema = new mongoose.Schema(
         public_id: { type: String, trim: true },
       },
     ],
+    slug: { type: String, required: true, unique: true },
   },
   { timestamps: true }
 );

@@ -1,5 +1,6 @@
 import Blog from "../models/blogs.js";
 import cloudinary from "../utils/cloudinary.js";
+import slugify from "slugify";
 
 export const createBlog = async (req, res, next) => {
   try {
@@ -16,16 +17,22 @@ export const createBlog = async (req, res, next) => {
       });
     }
 
+    const slug = slugify(title, { lower: true, strict: true });
+
     const createPost = await Blog.create({
       title,
       content,
       images: imageUrls,
+      slug,
     });
 
     return res.status(201).json({
       success: true,
       message: "Blog created successfully",
       blog: createPost,
+      slug,
+
+      author: req.user.id,
     });
   } catch (error) {
     next(error);
@@ -129,5 +136,25 @@ export const updateBlog = async (req, res, next) => {
       .json({ success: true, message: "Blog updated successfully", blog });
   } catch (error) {
     next(error);
+  }
+};
+
+export const getBlogBySlug = async (req, res, next) => {
+  try {
+    const blog = await Blog.findOne({ slug: req.params.slug });
+
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: "Blog not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      blog,
+    });
+  } catch (err) {
+    next(err);
   }
 };

@@ -6,15 +6,17 @@ import {
   getAllBlogs,
   getSingleBlog,
   updateBlog,
+  getBlogBySlug,
 } from "../controllers/blog-controller.js";
 import upload from "../middlewares/upload-middleware.js";
 
 const router = express.Router();
 
-router.post("/create", upload.array("images", 10), authMiddleware, createBlog);
+router.post("/create", authMiddleware, upload.array("images", 10), createBlog);
 router.delete("/:id", authMiddleware, deleteBlog);
-router.get("/getAll", authMiddleware, getAllBlogs);
-router.get("/:id", authMiddleware, getSingleBlog);
-router.put("/:id", upload.array("images", 10), authMiddleware, updateBlog);
+router.get("/getAll", getAllBlogs);
+router.get("/:id", getSingleBlog);
+router.put("/:id", authMiddleware, upload.array("images", 10), updateBlog);
+router.get("/slug/:slug", getBlogBySlug);
 
 export default router;
