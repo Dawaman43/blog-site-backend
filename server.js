@@ -16,7 +16,7 @@ connectToDB();
 
 app.use(
   cors({
-    origin: process.env.FRONT_END_API,
+    origin: "https://dawitsblog.vercel.app",
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
   })
