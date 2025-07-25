@@ -16,11 +16,15 @@ connectToDB();
 
 app.use(
   cors({
-    origin: "https://dawitsblog.vercel.app",
+    origin: ["https://dawitsblog.vercel.app", "http://localhost:5173"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// This ensures Express properly handles preflight requests
+app.options("*", cors());
 
 app.use(express.json());
 
