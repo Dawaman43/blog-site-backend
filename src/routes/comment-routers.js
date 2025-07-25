@@ -11,17 +11,15 @@ import { blogMiddleware } from "../middlewares/blog-middleware.js";
 import { authMiddleware } from "./../middlewares/auth-middleware.js";
 
 const router = express.Router({ mergeParams: true });
-
-router.use("/:blogId/comment", blogMiddleware);
 router
   .route("/:blogId/comment")
-  .get(getComments)
-  .post(authMiddleware, createComment);
+  .get(blogMiddleware, getComments)
+  .post(authMiddleware, blogMiddleware, createComment);
 
 router
   .route("/:blogId/comment/:commentId")
-  .get(getComment)
-  .put(authMiddleware, updateComment)
-  .delete(authMiddleware, deleteComment);
+  .get(blogMiddleware, getComment)
+  .put(authMiddleware, blogMiddleware, updateComment)
+  .delete(authMiddleware, blogMiddleware, deleteComment);
 
 export default router;

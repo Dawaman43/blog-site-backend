@@ -2,132 +2,90 @@ import bcrypt from "bcrypt";
 import User from "../models/users.js";
 import jwt from "jsonwebtoken";
 
-export const register = async (req, res, next) => {
-  console.log("req.body =>", req.body);
-
+export const register = async (req, res) => {
   try {
-    const { username, email, password, role } = req.body;
-
-    if (!username || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Must fill in the form body",
-      });
-    }
-
-    //check if there is existing email in the database
-    const existingEmail = await User.findOne({ email });
-    if (existingEmail) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "There is existing email with the provided email on the database",
-      });
-    }
-
-    //Encrypt the password with the bcrypt
-    const salt = await bcrypt.genSalt(10);
-    const encryptPassword = await bcrypt.hash(password, salt);
-
-    //register the user
-    const createNewUser = await User.create({
-      username,
-      email,
-      password: encryptPassword,
-      role,
-    });
-
-    //return to user
-    return res.status(201).json({
-      success: true,
-      message: "user registered successfully",
-      user: {
-        id: createNewUser._id,
-        username: createNewUser.username,
-        email: createNewUser.email,
-        role: createNewUser.role,
-      },
-    });
+    const { username, email, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({ username, email, password: hashedPassword });
+    await user.save();
+    res.status(201).json({ success: true, user });
   } catch (error) {
-    next(error);
-    console.log("Error => ", error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
-export const login = async (req, res, next) => {
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Must fill in the form body",
-      });
+    const user = await User.findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
-
-    //check if user is registered
-    const existingEmail = await User.findOne({ email });
-    if (!existingEmail) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "User didn't find with the provided email. Please register first to login",
-      });
-    }
-
-    //decrypt the password
-    const isPasswordMatch = await bcrypt.compare(
-      password,
-      existingEmail.password
-    );
-    if (!isPasswordMatch) {
-      return res.status(400).json({
-        success: false,
-        message: "Wrong password. please try again",
-      });
-    }
-
-    //Create a token to user when login
-    const payload = {
-      id: existingEmail._id,
-      username: existingEmail.username,
-      email: existingEmail.email,
-      role: existingEmail.role,
-    };
-    console.log(payload);
-
-    const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
-      expiresIn: "1d",
-    });
-
-    //return the result to user
-    return res.status(200).json({
-      success: true,
-      message: "User logged successfully",
-      token,
-      user: {
-        id: existingEmail._id,
-        username: existingEmail.username,
-        email: existingEmail.email,
-        role: existingEmail.role,
+    const token = jwt.sign(
+      {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
       },
-    });
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "7d" }
+    );
+    console.log("Token payload:", {
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+    }); // Debug log
+    res.status(200).json({ success: true, token, user });
   } catch (error) {
-    next(error);
-    console.log("Error => ", error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
-export const getAllUsers = async (req, res, next) => {
+export const getCurrentUser = async (req, res) => {
   try {
-    const allUsers = await User.find({}, "-password -__v");
-
-    return res.status(200).json({
-      success: true,
-      message: "Success fetching all users",
-      allUsers,
-    });
+    console.log("Fetching user with ID:", req.user._id); // Debug log
+    const user = await User.findById(req.user._id).select("-password");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+    res.status(200).json({ success: true, user });
   } catch (error) {
-    next(error);
-    console.log("Error => ", error);
+    console.error("Get current user error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateUser = async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    if (username) user.username = username;
+    if (email) user.email = email;
+    if (password) user.password = await bcrypt.hash(password, 10);
+
+    await user.save();
+    const updatedUser = {
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+    };
+    res.status(200).json({ success: true, user: updatedUser });
+  } catch (error) {
+    console.error("Update user error:", error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };

@@ -1,22 +1,46 @@
 import express from "express";
+import {
+  createComment,
+  getComments,
+  getComment,
+  updateComment,
+  deleteComment,
+  likeComment,
+} from "../controllers/comment-controller.js";
+import { blogMiddleware } from "../middlewares/blog-middleware.js";
 import { authMiddleware } from "../middlewares/auth-middleware.js";
 import {
-  createBlog,
-  deleteBlog,
-  getAllBlogs,
-  getSingleBlog,
-  updateBlog,
   getBlogBySlug,
+  incrementViewCount,
+  getAllBlogs,
+  getBlogCategories,
 } from "../controllers/blog-controller.js";
-import upload from "../middlewares/upload-middleware.js";
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
-router.post("/create", authMiddleware, upload.array("images", 10), createBlog);
-router.delete("/:id", authMiddleware, deleteBlog);
-router.get("/getAll", getAllBlogs);
-router.get("/:id", getSingleBlog);
-router.put("/:id", authMiddleware, upload.array("images", 10), updateBlog);
+// Middleware for routes involving blogId
+router.use("/:blogId/comment", blogMiddleware);
+
+// Routes for listing and creating comments
+router
+  .route("/:blogId/comment")
+  .get(getComments)
+  .post(authMiddleware, createComment);
+
+// Routes for specific comment actions
+router
+  .route("/:blogId/comment/:commentId")
+  .get(getComment)
+  .put(authMiddleware, updateComment)
+  .delete(authMiddleware, deleteComment);
+
+// Route for liking a comment
+router.post("/:blogId/comment/:commentId/like", authMiddleware, likeComment);
+
+// Blog routes
 router.get("/slug/:slug", getBlogBySlug);
+router.patch("/:id/view", blogMiddleware, incrementViewCount);
+router.get("/getAll", getAllBlogs); // Added route for getAllBlogs
+router.get("/categories", getBlogCategories); // Added route for getBlogCategories
 
 export default router;
