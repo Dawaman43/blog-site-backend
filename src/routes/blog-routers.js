@@ -9,7 +9,9 @@ import {
 } from "../controllers/comment-controller.js";
 import { blogMiddleware } from "../middlewares/blog-middleware.js";
 import { authMiddleware } from "../middlewares/auth-middleware.js";
+import { adminMiddleware } from "../middlewares/admin-middleware.js";
 import {
+  createBlog,
   getBlogBySlug,
   incrementViewCount,
   getAllBlogs,
@@ -35,6 +37,7 @@ router
   .delete(authMiddleware, deleteComment);
 
 // Route for liking a comment
+router.post("/create", authMiddleware, adminMiddleware,createBlog);
 router.post("/:blogId/comment/:commentId/like", authMiddleware, likeComment);
 
 // Blog routes
